@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PC 配置推荐 - 智能选机</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/cdn.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Noto+Sans+SC:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-primary: #0d1117;
+      --bg-secondary: #161b22;
+      --bg-tertiary: #21262d;
+      --accent-cyan: #58a6ff;
+      --accent-green: #3fb950;
+      --accent-orange: #d29922;
+      --accent-pink: #db61a2;
+      --text-primary: #c9d1d9;
+      --text-muted: #8b949e;
+    }
+    body {
+      font-family: 'Noto Sans SC', sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      min-height: 100vh;
+    }
+    .font-mono { font-family: 'JetBrains Mono', monospace; }
+    .gradient-border {
+      background: linear-gradient(135deg, var(--accent-cyan) 0%, var(--accent-pink) 100%);
+      padding: 2px;
+      border-radius: 12px;
+    }
+    .gradient-border-inner {
+      background: var(--bg-secondary);
+      border-radius: 10px;
+      padding: 1.5rem;
+    }
+    .card-hover {
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .card-hover:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+    }
+    .type-label {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-muted);
+    }
+    .score-bar {
+      height: 4px;
+      border-radius: 2px;
+      background: var(--bg-tertiary);
+      overflow: hidden;
+    }
+    .score-bar-fill {
+      height: 100%;
+      border-radius: 2px;
+      transition: width 0.5s ease;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fade-in {
+      animation: fadeIn 0.4s ease forwards;
+    }
+  </style>
+</head>
+<body class="antialiased">
+  <div x-data="app()" x-init="init()" class="min-h-screen">
+    <!-- Header -->
+    <header class="border-b border-[#30363d] bg-[#161b22]/80 backdrop-blur">
+      <div class="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-500 to-pink-500 flex items-center justify-center text-white font-bold text-lg">PC</div>
+          <div>
+            <h1 class="text-xl font-semibold">配置推荐</h1>
+            <p class="text-xs text-[#8b949e]">智能选机 · 实时价格 · 多维度考量</p>
+          </div>
+        </div>
+        <a href="/docs" target="_blank" class="text-sm text-[#58a6ff] hover:underline">API 文档</a>
+      </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto px-6 py-12">
+      <!-- 输入区 -->
+      <section class="gradient-border mb-12">
+        <div class="gradient-border-inner">
+          <h2 class="text-lg font-semibold mb-6 flex items-center gap-2">
+            <span class="w-2 h-5 rounded bg-cyan-500"></span>
+            填写需求
+          </h2>
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div>
+              <label class="block type-label mb-2">预算 (元)</label>
+              <input
+                x-model="budget"
+                type="number"
+                min="2000"
+                max="100000"
+                step="500"
+                placeholder="例如 8000"
+                class="w-full px-4 py-3 rounded-lg bg-[#0d1117] border border-[#30363d] focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 outline-none font-mono text-lg"
+              />
+            </div>
+            <div>
+              <label class="block type-label mb-2">使用场景</label>
+              <select
+                x-model="useCase"
+                class="w-full px-4 py-3 rounded-lg bg-[#0d1117] border border-[#30363d] focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 outline-none"
+              >
+                <option value="office">办公</option>
+                <option value="gaming">游戏</option>
+                <option value="design">设计/创作</option>
+                <option value="development">开发</option>
+                <option value="streaming">直播</option>
+                <option value="light">轻度使用</option>
+                <option value="all_round">全能</option>
+              </select>
+            </div>
+            <div>
+              <label class="block type-label mb-2">使用场所</label>
+              <select
+                x-model="scene"
+                class="w-full px-4 py-3 rounded-lg bg-[#0d1117] border border-[#30363d] focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 outline-none"
+              >
+                <option value="">不限</option>
+                <option value="home">家用</option>
+                <option value="office">办公室</option>
+                <option value="studio">工作室</option>
+                <option value="gaming_room">电竞房</option>
+                <option value="portable">便携需求</option>
+              </select>
+            </div>
+            <div>
+              <label class="block type-label mb-2">偏好</label>
+              <select
+                x-model="priority"
+                class="w-full px-4 py-3 rounded-lg bg-[#0d1117] border border-[#30363d] focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 outline-none"
+              >
+                <option value="balanced">均衡</option>
+                <option value="performance">偏性能</option>
+                <option value="cost">偏性价比</option>
+                <option value="aesthetics">偏外观</option>
+              </select>
+            </div>
+          </div>
+          <div class="mt-6">
+            <button
+              @click="fetchRecommend()"
+              :disabled="loading"
+              class="px-8 py-3 rounded-lg font-medium bg-gradient-to-r from-cyan-600 to-pink-600 hover:from-cyan-500 hover:to-pink-500 disabled:opacity-50 disabled:cursor-not-allowed transition"
+            >
+              <span x-show="!loading">生成推荐配置</span>
+              <span x-show="loading" class="flex items-center gap-2">
+                <svg class="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                生成中...
+              </span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- 错误提示 -->
+      <div x-show="error" x-transition class="mb-6 p-4 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400">
+        <span x-text="error"></span>
+      </div>
+
+      <!-- 推荐结果 -->
+      <section x-show="result" x-transition class="space-y-6">
+        <div class="flex items-center justify-between">
+          <h2 class="text-lg font-semibold flex items-center gap-2">
+            <span class="w-2 h-5 rounded bg-green-500"></span>
+            推荐配置
+          </h2>
+          <div class="font-mono text-xl">
+            总价：<span class="text-cyan-400" x-text="result ? '¥' + result.total_price.toLocaleString() : ''"></span>
+            <span class="text-sm text-[#8b949e] ml-2">预算 ¥<span x-text="result ? result.budget.toLocaleString() : ''"></span></span>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <template x-for="(entry, idx) in (result ? Object.entries(result.config) : [])" :key="entry[0]">
+            <div class="animate-fade-in p-5 rounded-xl bg-[#161b22] border border-[#30363d] card-hover" :style="'animation-delay: ' + (idx * 0.05) + 's'">
+              <div class="type-label mb-1" x-text="typeNames[entry[0]] || entry[0]"></div>
+              <div class="font-semibold text-lg mb-2" x-text="entry[1].name"></div>
+              <div class="flex gap-4 text-sm text-[#8b949e] mb-3">
+                <span x-text="entry[1].brand + ' ' + entry[1].model"></span>
+              </div>
+              <div class="flex items-center justify-between">
+                <div class="flex-1 mr-4">
+                  <div class="text-xs text-[#8b949e] mb-1">性能</div>
+                  <div class="score-bar">
+                    <div class="score-bar-fill bg-cyan-500" :style="'width:' + (entry[1].performance_score || 0) + '%'"></div>
+                  </div>
+                </div>
+                <div class="flex-1">
+                  <div class="text-xs text-[#8b949e] mb-1">外观</div>
+                  <div class="score-bar">
+                    <div class="score-bar-fill bg-pink-500" :style="'width:' + (entry[1].aesthetics_score || 0) + '%'"></div>
+                  </div>
+                </div>
+              </div>
+              <div class="mt-4 font-mono text-cyan-400 text-lg" x-text="'¥' + (entry[1].price || 0).toLocaleString()"></div>
+            </div>
+          </template>
+        </div>
+      </section>
+
+      <!-- 空状态 -->
+      <div x-show="!result && !loading" class="text-center py-20 text-[#8b949e]">
+        <div class="text-6xl mb-4">🖥️</div>
+        <p>填写预算与场景，点击「生成推荐配置」获取智能推荐</p>
+      </div>
+    </main>
+
+    <footer class="border-t border-[#30363d] mt-20 py-8 text-center text-sm text-[#8b949e]">
+      <p>数据支持多源扩展 · 价格可实时同步 · 推荐算法持续优化</p>
+    </footer>
+  </div>
+
+  <script>
+    const typeNames = {
+      cpu: '处理器',
+      gpu: '显卡',
+      motherboard: '主板',
+      ram: '内存',
+      storage: '存储',
+      psu: '电源',
+      case: '机箱',
+      cooler: '散热',
+      monitor: '显示器',
+    };
+
+    function app() {
+      return {
+        budget: 8000,
+        useCase: 'gaming',
+        scene: '',
+        priority: 'balanced',
+        loading: false,
+        error: null,
+        result: null,
+
+        init() {
+          // 可选：从 URL 读取参数
+        },
+
+        async fetchRecommend() {
+          this.loading = true;
+          this.error = null;
+          this.result = null;
+          try {
+            const res = await fetch('/api/recommend', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                budget: parseInt(this.budget) || 8000,
+                use_case: this.useCase,
+                scene: this.scene || null,
+                priority: this.priority,
+              }),
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.detail || '请求失败');
+            this.result = data;
+          } catch (e) {
+            this.error = e.message || '获取推荐失败，请检查后端是否启动并已执行 init_db';
+          } finally {
+            this.loading = false;
+          }
+        },
+      };
+    }
+  </script>
+</body>
+</html>
