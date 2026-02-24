@@ -140,6 +140,7 @@
               <label class="block type-label mb-2">偏好</label>
               <select
                 x-model="priority"
+                @change="applyPresetWeights()"
                 class="w-full px-4 py-3 rounded-lg bg-[#0d1117] border border-[#30363d] focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 outline-none"
               >
                 <option value="balanced">均衡</option>
@@ -147,6 +148,51 @@
                 <option value="cost">偏性价比</option>
                 <option value="aesthetics">偏外观</option>
               </select>
+            </div>
+          </div>
+          <!-- 权重调节 -->
+          <div class="mt-6 grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div>
+              <div class="flex items-center justify-between mb-1">
+                <label class="block type-label">性能权重</label>
+                <span class="text-xs text-[#8b949e]" x-text="weightPerformance.toFixed(0) + '%'"></span>
+              </div>
+              <input
+                x-model.number="weightPerformance"
+                type="range"
+                min="0"
+                max="100"
+                step="5"
+                class="w-full accent-cyan-500"
+              />
+            </div>
+            <div>
+              <div class="flex items-center justify-between mb-1">
+                <label class="block type-label">性价比权重</label>
+                <span class="text-xs text-[#8b949e]" x-text="weightCost.toFixed(0) + '%'"></span>
+              </div>
+              <input
+                x-model.number="weightCost"
+                type="range"
+                min="0"
+                max="100"
+                step="5"
+                class="w-full accent-green-500"
+              />
+            </div>
+            <div>
+              <div class="flex items-center justify-between mb-1">
+                <label class="block type-label">外观权重</label>
+                <span class="text-xs text-[#8b949e]" x-text="weightAesthetics.toFixed(0) + '%'"></span>
+              </div>
+              <input
+                x-model.number="weightAesthetics"
+                type="range"
+                min="0"
+                max="100"
+                step="5"
+                class="w-full accent-pink-500"
+              />
             </div>
           </div>
           <div class="mt-6">
@@ -242,12 +288,36 @@
         useCase: 'gaming',
         scene: '',
         priority: 'balanced',
+        weightPerformance: 45,
+        weightCost: 35,
+        weightAesthetics: 20,
         loading: false,
         error: null,
         result: null,
 
         init() {
           // 可选：从 URL 读取参数
+        },
+
+        applyPresetWeights() {
+          // 当用户切换「偏好」时，如果没有特别调节过，可以快速应用一组预设权重
+          if (this.priority === 'performance') {
+            this.weightPerformance = 60;
+            this.weightCost = 25;
+            this.weightAesthetics = 15;
+          } else if (this.priority === 'cost') {
+            this.weightPerformance = 30;
+            this.weightCost = 55;
+            this.weightAesthetics = 15;
+          } else if (this.priority === 'aesthetics') {
+            this.weightPerformance = 25;
+            this.weightCost = 15;
+            this.weightAesthetics = 60;
+          } else {
+            this.weightPerformance = 45;
+            this.weightCost = 35;
+            this.weightAesthetics = 20;
+          }
         },
 
         async fetchRecommend() {
@@ -263,6 +333,9 @@
                 use_case: this.useCase,
                 scene: this.scene || null,
                 priority: this.priority,
+                weight_performance: this.weightPerformance,
+                weight_cost: this.weightCost,
+                weight_aesthetics: this.weightAesthetics,
               }),
             });
             const data = await res.json();

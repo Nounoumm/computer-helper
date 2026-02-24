@@ -64,12 +64,49 @@ def _get_component_price(prices: list) -> float | None:
     return min(p.price for p in prices)
 
 
+def _resolve_weights(
+    priority: str,
+    scene: str | None,
+    weight_performance: float | None,
+    weight_cost: float | None,
+    weight_aesthetics: float | None,
+) -> tuple[float, float, float]:
+    """
+    根据优先级和用户自定义权重，计算归一化后的(性能, 性价比, 外观)权重。
+    """
+    if weight_performance is None and weight_cost is None and weight_aesthetics is None:
+        # 未传自定义权重时，根据优先级给出默认比例（总和约等于 1）
+        if priority == "performance":
+            wp, wc, wa = 0.6, 0.25, 0.15
+        elif priority == "cost":
+            wp, wc, wa = 0.3, 0.55, 0.15
+        elif priority == "aesthetics":
+            wp, wc, wa = 0.25, 0.15, 0.6
+        else:  # balanced
+            wp, wc, wa = 0.45, 0.35, 0.2
+            if scene in ("studio", "gaming_room"):
+                # 在工作室/电竞房场景下，均衡模式稍微抬高外观权重
+                wp, wc, wa = 0.4, 0.3, 0.3
+    else:
+        # 使用用户传入的 0-100 数值
+        wp = float(weight_performance or 0.0)
+        wc = float(weight_cost or 0.0)
+        wa = float(weight_aesthetics or 0.0)
+
+    total = wp + wc + wa
+    if total <= 0:
+        # 兜底：防止全为 0
+        return 0.45, 0.35, 0.2
+    return wp / total, wc / total, wa / total
+
+
 async def get_components_by_type(
     db: AsyncSession,
     component_type: str,
     budget: float,
-    prefer_performance: bool = True,
-    prefer_aesthetics: bool = False,
+    w_perf: float,
+    w_cost: float,
+    w_aes: float,
     scene: str | None = None,
     limit: int = 5,
 ) -> list[tuple[Component, float]]:
@@ -97,10 +134,6 @@ async def get_components_by_type(
         perf = comp.performance_score or 50
         cost_eff = (perf + 1) / (price / 1000 + 0.01) if price else 0
         
-        # 综合分：性能权重 + 性价比 + 外观
-        w_perf = 0.5 if prefer_performance else 0.2
-        w_cost = 0.3
-        w_aes = 0.2 if prefer_aesthetics else 0.05
         aes = comp.aesthetics_score or 50
         
         score = w_perf * perf + w_cost * min(cost_eff, 50) + w_aes * aes
@@ -116,14 +149,22 @@ async def recommend_config(
     use_case: str,
     scene: str | None = None,
     priority: str = "balanced",  # performance / cost / aesthetics
+    weight_performance: float | None = None,
+    weight_cost: float | None = None,
+    weight_aesthetics: float | None = None,
 ) -> dict:
     """
     生成推荐配置
     priority: performance 偏性能, cost 偏性价比, aesthetics 偏外观
     """
     ratio_map = get_budget_ratio(use_case)
-    prefer_perf = priority in ("performance", "balanced")
-    prefer_aes = priority == "aesthetics" or (priority == "balanced" and scene in ("studio", "gaming_room"))
+    w_perf, w_cost, w_aes = _resolve_weights(
+        priority=priority,
+        scene=scene,
+        weight_performance=weight_performance,
+        weight_cost=weight_cost,
+        weight_aesthetics=weight_aesthetics,
+    )
     
     config = {}
     total = 0.0
@@ -132,8 +173,9 @@ async def recommend_config(
         part_budget = budget * ratio
         items = await get_components_by_type(
             db, ctype.value, part_budget,
-            prefer_performance=prefer_perf,
-            prefer_aesthetics=prefer_aes,
+            w_perf=w_perf,
+            w_cost=w_cost,
+            w_aes=w_aes,
             scene=scene,
             limit=3,
         )
@@ -157,4 +199,7 @@ async def recommend_config(
         "use_case": use_case,
         "scene": scene,
         "priority": priority,
+        "weight_performance": round(w_perf, 3),
+        "weight_cost": round(w_cost, 3),
+        "weight_aesthetics": round(w_aes, 3),
     }

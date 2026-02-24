@@ -19,4 +19,7 @@ async def get_recommendation(
         use_case=req.use_case,
         scene=req.scene,
         priority=req.priority,
+        weight_performance=req.weight_performance,
+        weight_cost=req.weight_cost,
+        weight_aesthetics=req.weight_aesthetics,
     )
