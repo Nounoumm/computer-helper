@@ -207,6 +207,17 @@
                 生成中...
               </span>
             </button>
+            <button
+              @click="fetchRecommend(true)"
+              :disabled="loading"
+              class="ml-4 px-8 py-3 rounded-lg font-medium border border-cyan-600 text-cyan-400 hover:bg-cyan-600/10 disabled:opacity-50 disabled:cursor-not-allowed transition"
+            >
+              <span x-show="!loading">AI 优化推荐</span>
+              <span x-show="loading" class="flex items-center gap-2">
+                <svg class="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                AI 生成中...
+              </span>
+            </button>
           </div>
         </div>
       </section>
@@ -320,12 +331,13 @@
           }
         },
 
-        async fetchRecommend() {
+        async fetchRecommend(useAi = false) {
           this.loading = true;
           this.error = null;
           this.result = null;
           try {
-            const res = await fetch('/api/recommend', {
+            const url = useAi ? '/api/recommend/ai' : '/api/recommend';
+            const res = await fetch(url, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({

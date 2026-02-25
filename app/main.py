@@ -5,7 +5,7 @@ from fastapi.responses import FileResponse
 from pathlib import Path
 
 from app.database import init_db
-from app.routers import recommend, components
+from app.routers import recommend, recommend_ai, components
 
 app = FastAPI(
     title="PC 配置推荐系统",
@@ -13,6 +13,7 @@ app = FastAPI(
 )
 
 app.include_router(recommend.router)
+app.include_router(recommend_ai.router)
 app.include_router(components.router)
 
 static_dir = Path(__file__).parent.parent / "static"
